@@ -237,20 +237,12 @@ describe('Transaction controller', () => {
             };
         })
 
-        test('when success, then return status 200', async () => {
+        test('then transaction should have uid from request', async () => {
             const controller = new TransactionController(model);
 
             await controller.update(request, response);
 
-            expect(response._status).toEqual(200);
-        })
-
-        test('when success, then return updated transaction', async () => {
-            const controller = new TransactionController(model);
-
-            await controller.update(request, response);
-
-            expect(response._json).toEqual(model);
+            expect(response._json.uid).toEqual(1);
         })
 
         test('then transaction should belong to user on request', async () => {
@@ -261,14 +253,6 @@ describe('Transaction controller', () => {
             expect(response._json.user).toEqual(user);
         })
 
-        test('then transaction should have uid from request', async () => {
-            const controller = new TransactionController(model);
-
-            await controller.update(request, response);
-
-            expect(response._json.uid).toEqual(1);
-        })
-
         test('then update transaction', async () => {
             const controller = new TransactionController(model);
 
@@ -277,22 +261,112 @@ describe('Transaction controller', () => {
             expect(model._hasUpdated).toBeTruthy();;
         })
 
-        test('when fail, then return error status', async () => {
+        describe('when success', () => {
+
+            beforeEach(async () => {
+                const controller = new TransactionController(model);
+                await controller.update(request, response);
+            })
+
+            test('then return status 200', async () => {
+                expect(response._status).toEqual(200);
+            })
+    
+            test('then return updated transaction', async () => {
+                expect(response._json).toEqual(model);
+            })
+
+        })
+
+        describe('when fail', () => {
+
+            beforeEach(async () => {
+                const controller = new TransactionController({
+                    update: () => Promise.reject({code: 500})
+                });
+    
+                await controller.update(request, response);
+            })
+
+            test('then return error status', async () => {
+                expect(response._status).toEqual(500);
+            })
+    
+            test('then return error status', async () => {
+                expect(response._json).toEqual({code: 500});
+            })
+
+        })
+
+    })
+
+    describe('given remove transaction', () => {
+
+        let request;
+        let response;
+
+        const model = {
+            _hasDeleted: false,
+            delete() {
+                this._hasDeleted = true;
+                return Promise.resolve();
+            }
+        }
+        const user = {uid: "anyUserUid"};
+
+        beforeEach(() => {
+            request = {params: {uid: 1}, user};
+            response = new ResponseMock();
+        })
+
+        test('when succes, then return status 200', async () => {
+            const controller = new TransactionController(model);
+
+            await controller.delete(request, response);
+
+            expect(response._status).toEqual(200);
+        })
+
+        test('then remove transaction', async () => {
+            const controller = new TransactionController(model);
+
+            await controller.delete(request, response);
+
+            expect(model._hasDeleted).toBeTruthy();
+        })
+
+        test('then transaction should belong to user from request', async () => {
+            const controller = new TransactionController(model);
+
+            await controller.delete(request, response);
+
+            expect(model.user).toEqual(user);
+        })
+
+        test('then transaction should have uid from request', async () => {
+            const controller = new TransactionController(model);
+
+            await controller.delete(request, response);
+
+            expect(model.uid).toEqual(1);
+        })
+
+        test('when error, then return error status', async () => {
             const controller = new TransactionController({
-                update: () => Promise.reject({code: 500})
+                delete: () => Promise.reject({code: 500})
             });
 
-            await controller.update(request, response);
+            await controller.delete(request, response);
 
             expect(response._status).toEqual(500);
         })
 
-        test('when fail, then return error status', async () => {
+        test('when error, then return error', async () => {
             const controller = new TransactionController({
-                update: () => Promise.reject({code: 500})
+                delete: () => Promise.reject({code: 500})
             });
 
-            await controller.update(request, response);
+            await controller.delete(request, response);
 
             expect(response._json).toEqual({code: 500});
         })
